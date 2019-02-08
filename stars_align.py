@@ -26,7 +26,7 @@ def parse_input(file: str) -> [Star]:
     with open(file) as f:
         for line in f:
             line = line.replace("\n", "")
-            logger.debug("read: " + line)
+            logger.debug("read: %s", line)
             match = re.search("position=<\s*(-?\d+),\s*(-?\d+)> velocity=<\s*(-?\d+),\s*(-?\d+)>", line)
             if match:
                 stars.append(Star(
@@ -36,19 +36,21 @@ def parse_input(file: str) -> [Star]:
                     int(match.group(4))
                 ))
             else:
-                logger.warning("Unable to parse line: '" + line + "'")
+                logger.warning("Unable to parse line: '%s'", line)
 
     return stars
 
 
 def move_stars(stars: [Star]) -> [Star]:
-    return [Star(star.pos_x + star.velocity_x, star.pos_y + star.velocity_y, star.velocity_x, star.velocity_y) for star in  stars]
+    return [Star(star.pos_x + star.velocity_x, star.pos_y + star.velocity_y, star.velocity_x, star.velocity_y) for star in stars]
 
 
 stars = parse_input("input.txt")
 additional_img_border = 3 # we need some border around the text, otherwise tesseract will not recognize the text
+seconds_passed = 0
 
 while True:
+    seconds_passed += 1
     stars = move_stars(stars)
 
     min_x = min([star.pos_x for star in stars])
@@ -61,7 +63,7 @@ while True:
 
     # we will skip large images because they are expensive to render
     if image_width < 500:
-        logger.debug("Rendering frame (" + str(image_width) + ", " + str(image_height) + ") ...")
+        logger.debug("Rendering frame (%s, %s) ...", image_width, image_height)
         frame = Image.new("1", (image_width, image_height), color=255)
         for star in stars:
             frame.putpixel((star.pos_x - min_x + additional_img_border, star.pos_y - min_y + additional_img_border), 0)
@@ -71,7 +73,7 @@ while True:
         msg = pytesseract.image_to_string(Image.open('frame.png'))
 
         if msg:
-            logger.info("Message says: " + msg)
+            logger.info("After %s seconds message says: %s", seconds_passed, msg)
             break
         else:
             logger.debug("No message found")
